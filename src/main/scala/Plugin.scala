@@ -46,6 +46,7 @@ class Plugin extends gitbucket.core.plugin.Plugin {
   override val repositoryHooks  = Seq(new service.RepositoryHook)
   override val issueHooks       = Seq(new service.IssueHook)
   override val pullRequestHooks = Seq(new service.PullRequestHook)
+  override val receiveHooks     = Seq(new service.ReceiveHook)
 
   override val repositoryHeaders = Seq(
     (repository: RepositoryInfo, context: Context) =>  {

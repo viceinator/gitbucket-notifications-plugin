@@ -2,7 +2,9 @@ package gitbucket.notifications.service
 
 import gitbucket.core.model.{Account, Issue}
 import gitbucket.core.service.{AccountService, IssuesService, RepositoryService}
-import gitbucket.notifications.model._, Profile._
+import gitbucket.notifications.model._
+import Profile._
+import gitbucket.core.service.RepositoryService.RepositoryInfo
 import profile.blockingApi._
 
 trait NotificationsService {
@@ -91,6 +93,28 @@ trait NotificationsService {
       (add ++ res).distinct diff remove
     }
 
+  }
+
+  def getNotificationUsers(repository: RepositoryInfo)(implicit s: Session): List[String] = {
+    val watches = Watches.filter(t =>
+      t.userName === repository.owner.bind && t.repositoryName === repository.name.bind
+    ).list
+
+    (
+      Seq(
+        // auto-subscribe users for repository
+        autoSubscribeUsersForRepository(repository.owner, repository.name) :::
+          // watching users
+          watches.withFilter(_.notification == Watch.Watching).map(_.notificationUserName)
+      ) zip Seq(
+        // not watching users
+        watches.withFilter(_.notification == Watch.NotWatching).map(_.notificationUserName),
+        // ignoring users
+        watches.withFilter(_.notification == Watch.Ignoring).map(_.notificationUserName)
+      )
+      ).foldLeft[List[String]](Nil){ case (res, (add, remove)) =>
+      (add ++ res).distinct diff remove
+    }
   }
 
 }
